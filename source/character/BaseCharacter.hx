@@ -14,6 +14,7 @@ import flixel.util.FlxMath;
 import flixel.util.FlxPoint;
 import flixel.util.FlxRandom;
 import flixel.util.FlxSpriteUtil;
+import flixel.util.FlxVector;
 import nape.callbacks.CbType;
 import nape.geom.Vec2;
 import nape.phys.Body;
@@ -30,6 +31,8 @@ import openfl.events.EventDispatcher;
  */
 class BaseCharacter extends FlxBasic
 {
+	public static inline var TIME_GET_BACK_IN_BOUNDS_MAX:Float = 3;
+	
 	public static var characterInteraction:CbType = new CbType();
 	
 	public var dispatcher:EventDispatcher;
@@ -40,7 +43,6 @@ class BaseCharacter extends FlxBasic
 	public var shy:Bool;
 	
 	public var view:FlxNapeSprite;
-	//public var vision:FlxNapeSprite;
 	public var vision:Shape;
 	public var visionColor:Int;
 	
@@ -51,6 +53,8 @@ class BaseCharacter extends FlxBasic
 	
 	public var currentLike:FlxNapeSprite;
 	public var currentHate:FlxNapeSprite;
+	
+	private var _outOfBoundsTime:Float;
 
 	public function new() 
 	{
@@ -82,13 +86,13 @@ class BaseCharacter extends FlxBasic
 		view.antialiasing = true;
 		
 		view.createCircularBody( 32, BodyType.DYNAMIC );
-		view.setBodyMaterial(.5, 0.2, 0, 1);
+		view.setBodyMaterial(3, 0.2, 0, 1);
 		view.body.position.set( Vec2.weak( FlxRandom.intRanged(64, FlxG.width - 64), FlxRandom.intRanged(64, FlxG.height - 64) ) );
 		view.body.userData.character = this;
-		/*view.body.rotation = FlxAngle.asRadians( FlxRandom.intRanged( 0, 360 ) );
+		view.body.rotation = FlxAngle.asRadians( FlxRandom.intRanged( 0, 360 ) );
 		
-		view.body.applyAngularImpulse( FlxRandom.floatRanged( -1000, 1000) );
-		view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(10,80) , view.body.rotation, true ) );*/
+		//view.body.applyAngularImpulse( FlxRandom.floatRanged( -1000, 1000) );
+		view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(500,1000) , view.body.rotation, true ) );
 		view.body.cbTypes.add( characterInteraction );
 		
 		
@@ -124,34 +128,91 @@ class BaseCharacter extends FlxBasic
 		
 		if ( FlxRandom.chanceRoll(2) )
 		{
-			view.body.applyAngularImpulse( FlxRandom.floatRanged( -1000, 1000) );
-			view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(10,80) , view.body.rotation, true ) );
+			//view.body.applyAngularImpulse( FlxRandom.floatRanged( -1000, 1000) );
+			//view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(10,80) , view.body.rotation, true ) );
 		}
 		
 		view.body.velocity.rotate( view.body.rotation - view.body.velocity.angle );
-		
-		if ( currentLike == null )
+		if ( view.body.velocity.length < .3 ) 
 		{
-	
-			FlxNapeState.debug.drawCircle( view.body.position, 128, visionColor );
-			var l_bodyList:BodyList = FlxNapeState.space.bodiesInCircle( view.body.position, 128);
-			for ( body in l_bodyList )
+			view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(1000, 2000) , view.body.rotation, true ) );
+		
+		}
+		
+		if ( _outOfBoundsTime > 0 )
+		{
+			FlxG.log.add( "angular velo: " + view.body.angularVel );
+			//view.body.angularVel *= .98;
+			
+			var l_angleToCenter:Float = (FlxAngle.getAngle( FlxPoint.weak( view.body.position.x, view.body.position.y ), FlxPoint.weak( FlxG.width * .5, FlxG.height * .5 ) ) - 90) * FlxAngle.TO_RAD;
+			var l_vectorToCenter:Vec2 = Vec2.fromPolar( 1, l_angleToCenter, true );
+			var l_curVector:Vec2 = Vec2.fromPolar( 1, view.body.rotation, true );
+			
+			var l_distanceToCenterAngle:Float = Math.abs( Math.acos( FlxMath.dotProduct( l_curVector.x, l_curVector.y, l_vectorToCenter.x, l_vectorToCenter.y ) ) );
+			
+			while ( l_distanceToCenterAngle < Math.abs( view.body.angularVel / 60 ) )
 			{
-				if ( body == view.body )
-				{
-					continue;
-				}
-				var l_character:BaseCharacter = body.userData.character;
-				if ( l_character != null && l_character.colorAm == colorLike )
-				{
-					currentLike = l_character.view;
-				}
+				view.body.angularVel = 0;
+				//view.body.angularVel *= .5;
 			}
+			
+			_outOfBoundsTime -= FlxG.elapsed;
 		}
 		else
 		{
-			FlxNapeState.debug.drawLine( view.body.position, currentLike.body.position, visionColor );
+			if ( currentLike == null )
+			{
+		
+				///FlxNapeState.debug.drawCircle( view.body.position, 128, visionColor );
+				var l_bodyList:BodyList = FlxNapeState.space.bodiesInCircle( view.body.position, 128);
+				for ( body in l_bodyList )
+				{
+					if ( body == view.body )
+					{
+						continue;
+					}
+					var l_character:BaseCharacter = body.userData.character;
+					if ( l_character != null && l_character.colorAm == colorLike )
+					{
+						currentLike = l_character.view;
+					}
+				}
+			}
+			else
+			{
+				//FlxNapeState.debug.drawLine( view.body.position, currentLike.body.position, visionColor );
+			}
 		}
+	}
+	
+	public function headingOutOfBounds():Void
+	{
+		if ( _outOfBoundsTime >= 0 )
+		{
+			return;
+		}
+		
+		_outOfBoundsTime = TIME_GET_BACK_IN_BOUNDS_MAX;
+		
+		//view.body.rotation = 
+		
+		var pos_source:Vec2 = view.body.position.copy(true);
+		var dir_source:Vec2 = Vec2.fromPolar(1, view.body.rotation, true);
+		var pos_target:Vec2 = Vec2.weak( FlxG.width * .5, FlxG.height * .5 );
+		
+		if ( (pos_source.x - pos_target.x) * dir_source.y > (pos_source.y - pos_target.y) * dir_source.x )
+		{
+			// clockwise
+			view.body.applyAngularImpulse( 10000  );
+		}
+		else
+		{
+			// counterclockwise
+			view.body.applyAngularImpulse( -10000  );
+		}
+		//view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(250,500) , view.body.rotation, true ) );
+		
+		currentLike = null;
 	}
 	
 	private function onFoundHate( e:VisionEvent ):Void

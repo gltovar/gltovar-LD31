@@ -5,6 +5,7 @@ import flixel.group.FlxGroup;
 import flixel.group.FlxTypedGroup;
 import flixel.util.FlxColor;
 import flixel.util.FlxSave;
+import openfl.geom.Rectangle;
 
 /**
  * Handy, pre-built Registry class that can be used to store 
@@ -13,6 +14,11 @@ import flixel.util.FlxSave;
  */
 class Reg
 {
+	
+	public static var BOUNDS_LEFT:Rectangle;
+	public static var BOUNDS_TOP:Rectangle;
+	public static var BOUNDS_RIGHT:Rectangle;
+	public static var BOUNDS_BOTTOM:Rectangle;
 	/**
 	 * Generic levels Array that can be used for cross-state stuff.
 	 * Example usage: Storing the levels of a platformer.
