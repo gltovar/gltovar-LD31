@@ -1,19 +1,26 @@
 package;
 
 import character.BaseCharacter;
+import flixel.addons.nape.FlxNapeSprite;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
 import flixel.group.FlxGroup;
 import flixel.text.FlxText;
 import flixel.ui.FlxButton;
+import flixel.util.FlxAngle;
+import flixel.util.FlxColor;
 import flixel.util.FlxMath;
+import flixel.addons.nape.FlxNapeState;
+import flixel.util.FlxRandom;
+import nape.geom.Vec2;
+import nape.phys.BodyType;
 
 /**
  * A FlxState which can be used for the game's menu.
  */
-class MenuState extends FlxState
-{
+class MenuState extends FlxNapeState
+{	
 	private var _mouseTest:BaseCharacter;
 	
 	/**
@@ -22,6 +29,9 @@ class MenuState extends FlxState
 	override public function create():Void
 	{
 		super.create();
+		
+		napeDebugEnabled = true;
+
 		
 		var	colorIndex:Int = 0;
 		
@@ -41,7 +51,7 @@ class MenuState extends FlxState
 		add(Reg.VISIONS);
 		
 		var testingCharacters:Int = 0;
-		while ( testingCharacters < 20 )
+		while ( testingCharacters < 25 )
 		{
 			Reg.CHARACTERS.add( new BaseCharacter() );
 			++testingCharacters;
