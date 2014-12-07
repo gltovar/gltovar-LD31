@@ -38,8 +38,12 @@ class MenuState extends FlxNapeState
 	private var _dropTimeMultiplier:Float;
 	
 	private var _countDownText:FlxText;
+	private var _scoreText:FlxText;
+	private var _strikeText:FlxText;
 	
 	private var _nextDropColor:Int;
+	
+	private var state:GameState;
 	
 	/**
 	 * Function that is called up when to state is created to set it up. 
@@ -49,6 +53,9 @@ class MenuState extends FlxNapeState
 		super.create();
 		
 		napeDebugEnabled = true;
+		
+		Reg.score = 0;
+		Reg.strikes = 0;
 
 		FlxG.sound.playMusic("assets/music/music.wav", .25);
 		
@@ -78,12 +85,12 @@ class MenuState extends FlxNapeState
 	
 		
 		var testingCharacters:Int = 0;
-		while ( testingCharacters < 8 )
+		/*while ( testingCharacters < 8 )
 		{
 			Reg.CHARACTERS.add( new BaseCharacter( ) );
 			
 			++testingCharacters;
-		}
+		}*/
 		
 		var interactionListener:InteractionListener = new InteractionListener( CbEvent.BEGIN, InteractionType.COLLISION, BaseCharacter.characterInteraction, BaseCharacter.characterInteraction, onCharacterCollide);
 		
@@ -96,7 +103,7 @@ class MenuState extends FlxNapeState
 		_nextDropColor = Reg.COLORS[ FlxRandom.intRanged(0, Reg.COLORS.length -1) ];
 		
 		_countDownText = new FlxText(0, 0, 150);
-		_countDownText.size = 16;
+		_countDownText.size = 24;
 		_countDownText.color = _nextDropColor;
 		_countDownText.borderStyle = FlxText.BORDER_OUTLINE_FAST;
 		_countDownText.borderColor = 0;
@@ -104,14 +111,63 @@ class MenuState extends FlxNapeState
 		add(_countDownText);
 		
 		
-		//_mouseTest = new BaseCharacter();
-		//Reg.CHARACTERS.add( _mouseTest );
+		_scoreText = new FlxText(0, 0, 150);
+		_scoreText.size = 12;
+		_scoreText.color = FlxColor.WHITE;
+		_scoreText.borderStyle = FlxText.BORDER_OUTLINE_FAST;
+		_scoreText.borderColor = 0;
+		
+		add(_scoreText);
+		
+		_strikeText = new FlxText(0, 0, 150);
+		_strikeText.size = 16;
+		_strikeText.color = FlxColor.MAROON;
+		_strikeText.borderStyle = FlxText.BORDER_OUTLINE_FAST;
+		_strikeText.borderColor = FlxColor.WHITE;
+		
+		add(_strikeText );
+		
+		state = GameState.INTRO;
+		
 	}
 	
 	override public function update():Void 
 	{
 		super.update();
 		
+		switch( state )
+		{
+			case GameState.INTRO:
+				intro();
+			case GameState.PLAYING:
+				playing();
+			case GameState.GAME_OVER:
+				gameOver();
+		}
+		
+	}
+	
+	private function intro():Void
+	{
+		if ( FlxG.mouse.justReleased )
+		{
+			state = GameState.PLAYING;
+		}
+	}
+	
+	private function gameOver():Void
+	{
+		if ( FlxG.mouse.justReleased )
+		{
+			Reg.CHARACTERS.destroy();
+			Reg.VIEWS.destroy();
+			
+			FlxG.resetState();
+		}
+	}
+	
+	private function playing():Void
+	{
 		/*FlxNapeState.debug.drawAABB(  AABB.fromRect( Reg.BOUNDS_TOP ), FlxColor.WHITE );
 		FlxNapeState.debug.drawAABB(  AABB.fromRect( Reg.BOUNDS_RIGHT ), FlxColor.WHITE );
 		FlxNapeState.debug.drawAABB(  AABB.fromRect( Reg.BOUNDS_BOTTOM ), FlxColor.WHITE );
@@ -174,6 +230,7 @@ class MenuState extends FlxNapeState
 			_dropTimeMultiplier += .01;
 			_nextDropColor = Reg.COLORS[ FlxRandom.intRanged(0, Reg.COLORS.length -1) ];
 			_countDownText.color = _nextDropColor;
+			++Reg.score;
 		}
 		else if ( Math.floor( _currentDropTime ) != Math.floor( _currentDropTime - (FlxG.elapsed * _dropTimeMultiplier) ) && _currentDropTime - (FlxG.elapsed * _dropTimeMultiplier) > 0 )
 		{
@@ -183,6 +240,24 @@ class MenuState extends FlxNapeState
 		var l_pointIndex:Int = Std.string( _currentDropTime ).indexOf('.');
 		_countDownText.text = Std.string( _currentDropTime ).substring(0, l_pointIndex+2);
 		_countDownText.setPosition( FlxG.mouse.x + 20, FlxG.mouse.y );
+		
+		_scoreText.text = ""+Reg.score;
+		_scoreText.setPosition( FlxG.mouse.x + 20, FlxG.mouse.y - 18 );
+		
+		switch( Reg.strikes )
+		{
+			case 0:
+				_strikeText.text = "";
+			case 1:
+				_strikeText.text = "X";
+			case 2:
+				_strikeText.text = "X X";
+			case 3:
+				_strikeText.text = "X X X";
+				state = GameState.GAME_OVER;
+				// GAMEOVER!!!!!
+		}
+		_strikeText.setPosition( FlxG.mouse.x + 20, FlxG.mouse.y + 30 );
 		
 		_currentDropTime -= FlxG.elapsed * _dropTimeMultiplier;
 		

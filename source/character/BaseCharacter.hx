@@ -15,6 +15,7 @@ import flixel.util.FlxPoint;
 import flixel.util.FlxRandom;
 import flixel.util.FlxSpriteUtil;
 import flixel.util.FlxVector;
+import flixel.util.loaders.TexturePackerData;
 import nape.callbacks.CbType;
 import nape.geom.Vec2;
 import nape.phys.Body;
@@ -31,6 +32,10 @@ import openfl.events.EventDispatcher;
  */
 class BaseCharacter extends FlxBasic
 {
+	public static inline var LONELY_LOSE_KARMA_TIME:Float = 10;
+	public static inline var TOTAL_NIRVANA_POINTS:Int = 12;
+	public static inline var STARTING_KARMA:Int = 5;
+	
 	public static inline var TIME_GET_BACK_IN_BOUNDS_MAX:Float = 3;
 	
 	public static var characterInteraction:CbType = new CbType();
@@ -61,6 +66,10 @@ class BaseCharacter extends FlxBasic
 	private var _exLikes:Array<FlxNapeSprite>;
 	
 	private var _outOfBoundsTime:Float;
+	
+	public var karma:Int;
+	
+	private var _lonelyTimer:Float;
 
 	public function new(p_colorAm:Int = -1, p_x:Float = -1, p_y:Float = -1 ) 
 	{
@@ -94,26 +103,20 @@ class BaseCharacter extends FlxBasic
 		viewBody.offset.set( 32, 32 );
 		viewBody.color = colorAm;
 		
-		viewMouth = new FlxSprite(0, 0);
 		
-		switch( FlxRandom.intRanged(0, 4) )
-		{
-			case 0:
-				viewMouth.loadGraphic( "assets/images/mouth_happy.png" );
-				viewMouth.offset.set( 32, 32 );
-			case 1:
-				viewMouth.loadGraphic( "assets/images/mouth_smile.png" );
-				viewMouth.offset.set( 32, 32 );
-			case 2:
-				viewMouth.loadGraphic( "assets/images/mouth_meh.png" );
-				viewMouth.offset.set( 32, 32 );
-			case 3:
-				viewMouth.loadGraphic( "assets/images/mouth_sad_01.png" );
-				viewMouth.offset.set( 32, 32 );
-			case 4:
-				viewMouth.loadGraphic( "assets/images/mouth_estatic.png" );
-				viewMouth.offset.set( 32, 32 );
-		}
+		var mouthData:TexturePackerData = new TexturePackerData( "assets/data/mouth_data.json", "assets/images/mouth_sheet.png");
+		
+		viewMouth = new FlxSprite(0, 0);
+		viewMouth.loadGraphicFromTexture( mouthData );
+		
+		viewMouth.animation.addByPrefix("estatic", "mouth_estatic", 1, false);
+		viewMouth.animation.addByPrefix("happy", "mouth_happy", 1, false);
+		viewMouth.animation.addByPrefix("smile", "mouth_smile", 1, false);
+		viewMouth.animation.addByPrefix("meh", "mouth_meh", 1, false);
+		viewMouth.animation.addByPrefix("sad", "mouth_sad_", 12, true);
+		
+		viewMouth.offset.set( 32, 32 );
+		
 		
 		
 		
@@ -175,7 +178,8 @@ class BaseCharacter extends FlxBasic
 		
 	
 		
-		
+		karma = STARTING_KARMA;
+		updateMouth();
 		
 		//Reg.VIEWS.add( view );
 		//Reg.CHARACTER_COLORS[ colorAm ].add( view );
@@ -188,17 +192,62 @@ class BaseCharacter extends FlxBasic
 		//view.origin.set( 32, 32 );
 		//view.offset.set( -32, -32 );
 		
+		//FlxG.watch.addQuick( "lonely timer", _lonelyTimer);
+		_lonelyTimer = 0;
+	}
+	
+	private function updateMouth():Void
+	{
+		var l_karmaPercent:Float = karma / TOTAL_NIRVANA_POINTS;
+		
+		if ( l_karmaPercent <= .2 )
+		{
+			viewMouth.animation.play("sad");
+		}
+		else if ( l_karmaPercent <= .4 )
+		{
+			viewMouth.animation.play("meh");
+		}
+		else if ( l_karmaPercent <= .6 )
+		{
+			viewMouth.animation.play("smile");
+		}
+		else if ( l_karmaPercent <= .8 )
+		{
+			viewMouth.animation.play("happy");
+		}
+		else
+		{
+			viewMouth.animation.play("estatic");
+		}
 	}
 	
 	override public function update():Void 
 	{
 		super.update();
 		
-		if ( FlxRandom.chanceRoll(2) )
+		_lonelyTimer += FlxG.elapsed;
+		if ( _lonelyTimer > LONELY_LOSE_KARMA_TIME )
 		{
-			//view.body.applyAngularImpulse( FlxRandom.floatRanged( -1000, 1000) );
-			//view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(10,80) , view.body.rotation, true ) );
+			updateKarma();
+			_lonelyTimer = 0;
 		}
+		
+		
+		if ( karma / TOTAL_NIRVANA_POINTS <= .2 )
+		{
+			if ( view.isOnScreen() == false )
+			{
+				if ( Reg.strikes < 3 )
+				{
+					++Reg.strikes;
+				}
+				FlxG.sound.play("assets/sounds/Sad_Offscreen.wav", .33 );
+				destroy();
+				return;
+			}
+		}
+		
 		
 		view.body.velocity.rotate( view.body.rotation - view.body.velocity.angle );
 		if ( view.body.velocity.length < .5 ) 
@@ -242,7 +291,7 @@ class BaseCharacter extends FlxBasic
 			{
 		
 				//FlxNapeState.debug.drawCircle( view.body.position, 128, visionColor );
-				var l_bodyList:BodyList = FlxNapeState.space.bodiesInCircle( view.body.position, 128);
+				var l_bodyList:BodyList = FlxNapeState.space.bodiesInCircle( view.body.position, 150);
 				for ( body in l_bodyList )
 				{
 					if ( body == view.body )
@@ -257,7 +306,11 @@ class BaseCharacter extends FlxBasic
 					}
 				}
 			}
-			else
+			else if ( currentLike.body == null )
+			{
+				currentLike = null;
+			}
+			else 
 			{
 				var l_angleToLike:Float = (FlxAngle.getAngle( FlxPoint.weak( view.body.position.x, view.body.position.y), FlxPoint.weak(currentLike.body.position.x, currentLike.body.position.y) ) - 90 ) * FlxAngle.TO_RAD;
 				
@@ -292,6 +345,25 @@ class BaseCharacter extends FlxBasic
 				//FlxNapeState.debug.drawLine( view.body.position, currentLike.body.position, visionColor );
 			}
 		}
+	}
+	
+	override public function destroy():Void 
+	{
+		view.kill();
+		view.destroy();
+		
+		viewBody.kill();
+		viewBody.destroy();
+		
+		viewEye.kill();
+		viewEye.destroy();
+		
+		viewMouth.kill();
+		viewMouth.destroy();
+		
+		kill();
+		
+		super.destroy();
 	}
 	
 	public function headingOutOfBounds():Void
@@ -330,6 +402,48 @@ class BaseCharacter extends FlxBasic
 		{
 			_exLikes.push( p_collider );
 			currentLike = null;
+			updateKarma(1);
+		}
+	}
+	
+	public function updateKarma( p_amount:Int = -1, p_fromChain:Bool = false ):Void
+	{
+		if ( alive == false )
+		{
+			return;
+		}
+		if ( karma <= 0 )
+		{
+			karma = 0;
+			return;
+		}
+		
+		karma += p_amount;
+		updateMouth();
+		
+		if ( karma >= TOTAL_NIRVANA_POINTS )
+		{
+			Reg.score += 10;
+			if (p_fromChain == false &&  Reg.strikes > 0 ) // lighten the chaining a bit
+			{
+				--Reg.strikes;
+				var l_bodyList:BodyList = FlxNapeState.space.bodiesInCircle( view.body.position, 150);
+				for ( body in l_bodyList )
+				{
+					if ( body == view.body )
+					{
+						continue;
+					}
+					var l_character:BaseCharacter = body.userData.character;
+					if ( l_character != null && l_character.karma <= TOTAL_NIRVANA_POINTS )
+					{
+						l_character.updateKarma(1,true);
+					}
+				}
+			}
+			
+			FlxG.sound.play("assets/sounds/Reach_Nirvana.wav", .33 );
+			destroy();
 		}
 	}
 	
