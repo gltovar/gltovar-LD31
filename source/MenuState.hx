@@ -13,6 +13,10 @@ import flixel.util.FlxColor;
 import flixel.util.FlxMath;
 import flixel.addons.nape.FlxNapeState;
 import flixel.util.FlxRandom;
+import nape.callbacks.CbEvent;
+import nape.callbacks.InteractionCallback;
+import nape.callbacks.InteractionListener;
+import nape.callbacks.InteractionType;
 import nape.geom.Vec2;
 import nape.phys.BodyType;
 
@@ -57,6 +61,10 @@ class MenuState extends FlxNapeState
 			++testingCharacters;
 		}
 		
+		var interactionListener:InteractionListener = new InteractionListener( CbEvent.BEGIN, InteractionType.COLLISION, BaseCharacter.characterInteraction, BaseCharacter.characterInteraction, onCharacterCollide);
+		
+		FlxNapeState.space.listeners.add( interactionListener );
+		
 		//_mouseTest = new BaseCharacter();
 		//Reg.CHARACTERS.add( _mouseTest );
 	}
@@ -65,7 +73,23 @@ class MenuState extends FlxNapeState
 	{
 		super.update();
 		
+		//FlxNapeState.debug.drawCircle( Vec2.weak(FlxG.mouse.x, FlxG.mouse.y), 25, 0xffffffff ) ;
+		
+		
 		//_mouseTest.view.setPosition( FlxG.mouse.x, FlxG.mouse.y );
+	}
+	
+	private function onCharacterCollide( p_collision:InteractionCallback ):Void
+	{
+		//FlxG.log.add("a bounce!");
+		//FlxAngle.
+		
+		p_collision.int1.castBody.rotation += 3.14;
+		//p_collision.int1.castBody.angularVel *= -1;
+		p_collision.int2.castBody.rotation += 3.14;
+		//p_collision.int2.castBody.angularVel *= -1;
+		
+		
 	}
 	
 	/**

@@ -3,17 +3,23 @@ import character.controllers.movement.MovementController;
 import character.controllers.vision.VisionController;
 import character.controllers.vision.VisionEvent;
 import flixel.addons.nape.FlxNapeSprite;
+import flixel.addons.nape.FlxNapeState;
 import flixel.FlxBasic;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.util.FlxAngle;
 import flixel.util.FlxCollision;
 import flixel.util.FlxColor;
+import flixel.util.FlxMath;
 import flixel.util.FlxPoint;
 import flixel.util.FlxRandom;
 import flixel.util.FlxSpriteUtil;
+import nape.callbacks.CbType;
 import nape.geom.Vec2;
+import nape.phys.Body;
 import nape.phys.BodyType;
+import nape.shape.Polygon;
+import nape.shape.Shape;
 import openfl.events.EventDispatcher;
 
 /**
@@ -22,6 +28,8 @@ import openfl.events.EventDispatcher;
  */
 class BaseCharacter extends FlxBasic
 {
+	public static var characterInteraction:CbType = new CbType();
+	
 	public var dispatcher:EventDispatcher;
 	
 	public var colorAm:Int;
@@ -30,7 +38,9 @@ class BaseCharacter extends FlxBasic
 	public var shy:Bool;
 	
 	public var view:FlxNapeSprite;
-	public var vision:FlxNapeSprite;
+	//public var vision:FlxNapeSprite;
+	public var vision:Shape;
+	public var visionColor:Int;
 	
 	//public var movementController:MovementController;
 	//public var visionController:VisionController;
@@ -48,6 +58,8 @@ class BaseCharacter extends FlxBasic
 		colorLike = Reg.COLORS[FlxRandom.intRanged(0, Reg.COLORS.length - 1)];
 		colorHate = Reg.COLORS[FlxRandom.intRanged(0, Reg.COLORS.length - 1)];
 		shy = (Math.round( Math.random()) == 1 ) ? true : false;
+		
+		visionColor = FlxRandom.color(180);
 		
 		dispatcher = new EventDispatcher();
 		
@@ -68,16 +80,27 @@ class BaseCharacter extends FlxBasic
 		view.antialiasing = true;
 		
 		view.createCircularBody( 32, BodyType.DYNAMIC );
-		view.setBodyMaterial();
+		view.setBodyMaterial(.5, 0.2, 0, 1);
 		view.body.position.set( Vec2.weak( FlxRandom.intRanged(64, FlxG.width - 64), FlxRandom.intRanged(64, FlxG.height - 64) ) );
-		view.body.rotation = FlxAngle.asRadians( FlxRandom.intRanged( 0, 360 ) );
+		/*view.body.rotation = FlxAngle.asRadians( FlxRandom.intRanged( 0, 360 ) );
 		
-		view.body.applyAngularImpulse( FlxRandom.floatRanged( -10000, 10000) );
-		view.body.applyImpulse( Vec2.fromPolar( 500, view.body.rotation, true ) );
-		
+		view.body.applyAngularImpulse( FlxRandom.floatRanged( -1000, 1000) );
+		view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(10,80) , view.body.rotation, true ) );*/
+		view.body.cbTypes.add( characterInteraction );
 		
 		
 		Reg.VIEWS.add( view );
+		
+		
+		//vision = new FlxNapeSprite(0, 0);
+		
+		//vision.body = 
+		vision = new Polygon( Polygon.regular(128, 64, 3, Math.PI) );
+		vision.body = new Body();
+		
+	
+		
+		
 		
 		//Reg.VIEWS.add( view );
 		//Reg.CHARACTER_COLORS[ colorAm ].add( view );
@@ -96,7 +119,19 @@ class BaseCharacter extends FlxBasic
 	{
 		super.update();
 		
+		if ( FlxRandom.chanceRoll(2) )
+		{
+			view.body.applyAngularImpulse( FlxRandom.floatRanged( -1000, 1000) );
+			view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(10,80) , view.body.rotation, true ) );
+		}
+		
 		view.body.velocity.rotate( view.body.rotation - view.body.velocity.angle );
+		
+		vision.body.rotation = view.body.rotation;
+		var visionOffset:Vec2 = view.body.position.copy(true);
+		visionOffset = visionOffset.add( Vec2.fromPolar( 128, view.body.rotation,true ) );
+		vision.body.position.set( visionOffset );
+		FlxNapeState.debug.drawPolygon( vision.castPolygon.worldVerts, visionColor );
 		
 		/*movementController.update();
 		visionController.update();
