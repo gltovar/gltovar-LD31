@@ -45,7 +45,7 @@ class Reg
 	 */
 	public static var saves:Array<FlxSave> = [];
 	
-	public static var COLORS:Array<Int> = [ FlxColor.CRIMSON, FlxColor.AZURE, FlxColor.GOLDEN ];
+	public static var COLORS:Array<Int> = [ FlxColor.CRIMSON, FlxColor.AZURE, FlxColor.GOLDEN, FlxColor.LAVENDER ];
 	
 	public static var CHARACTERS:FlxGroup;
 	public static var VIEWS:FlxGroup;
@@ -53,6 +53,7 @@ class Reg
 	
 	public static var CHARACTER_COLORS:Map<Int,FlxGroup> = [	FlxColor.CRIMSON 		=> null,
 																FlxColor.AZURE		=> null,
-																FlxColor.GOLDEN		=> null ];
+																FlxColor.GOLDEN		=> null,
+																FlxColor.LAVENDER => null ];
 																
 }

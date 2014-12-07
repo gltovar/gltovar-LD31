@@ -29,7 +29,17 @@ import openfl.geom.Rectangle;
  */
 class MenuState extends FlxNapeState
 {	
+	public static inline var TIME_DELAY_PLACEMENT:Float = 5;
+	
 	private var _mouseTest:BaseCharacter;
+	
+	private var _currentDropTime:Float;
+	
+	private var _dropTimeMultiplier:Float;
+	
+	private var _countDownText:FlxText;
+	
+	private var _nextDropColor:Int;
 	
 	/**
 	 * Function that is called up when to state is created to set it up. 
@@ -40,6 +50,7 @@ class MenuState extends FlxNapeState
 		
 		napeDebugEnabled = true;
 
+		FlxG.sound.playMusic("assets/music/music.wav", .25);
 		
 		Reg.BOUNDS_TOP = new Rectangle(0, 0, FlxG.width, 75);
 		Reg.BOUNDS_RIGHT = new Rectangle(FlxG.width-75, 0, 75, FlxG.height);
@@ -64,16 +75,34 @@ class MenuState extends FlxNapeState
 		Reg.VISIONS = new FlxGroup();
 		add(Reg.VISIONS);
 		
+	
+		
 		var testingCharacters:Int = 0;
-		while ( testingCharacters < 20 )
+		while ( testingCharacters < 8 )
 		{
-			Reg.CHARACTERS.add( new BaseCharacter() );
+			Reg.CHARACTERS.add( new BaseCharacter( ) );
+			
 			++testingCharacters;
 		}
 		
 		var interactionListener:InteractionListener = new InteractionListener( CbEvent.BEGIN, InteractionType.COLLISION, BaseCharacter.characterInteraction, BaseCharacter.characterInteraction, onCharacterCollide);
 		
 		FlxNapeState.space.listeners.add( interactionListener );
+		
+		_currentDropTime = TIME_DELAY_PLACEMENT - FlxG.elapsed;
+		_dropTimeMultiplier = 1;
+		
+		
+		_nextDropColor = Reg.COLORS[ FlxRandom.intRanged(0, Reg.COLORS.length -1) ];
+		
+		_countDownText = new FlxText(0, 0, 150);
+		_countDownText.size = 16;
+		_countDownText.color = _nextDropColor;
+		_countDownText.borderStyle = FlxText.BORDER_OUTLINE_FAST;
+		_countDownText.borderColor = 0;
+			
+		add(_countDownText);
+		
 		
 		//_mouseTest = new BaseCharacter();
 		//Reg.CHARACTERS.add( _mouseTest );
@@ -137,6 +166,25 @@ class MenuState extends FlxNapeState
 			}
 		}
 		
+		if ( _currentDropTime <= 0 )
+		{
+			Reg.CHARACTERS.add( new BaseCharacter( _nextDropColor, FlxG.mouse.x, FlxG.mouse.y) );
+			FlxG.sound.play( "assets/sounds/Blip_Place.wav", .1 );
+			_currentDropTime = TIME_DELAY_PLACEMENT;
+			_dropTimeMultiplier += .01;
+			_nextDropColor = Reg.COLORS[ FlxRandom.intRanged(0, Reg.COLORS.length -1) ];
+			_countDownText.color = _nextDropColor;
+		}
+		else if ( Math.floor( _currentDropTime ) != Math.floor( _currentDropTime - (FlxG.elapsed * _dropTimeMultiplier) ) && _currentDropTime - (FlxG.elapsed * _dropTimeMultiplier) > 0 )
+		{
+			FlxG.sound.play("assets/sounds/Blip_Countdown.wav", .1 );
+		}
+		
+		var l_pointIndex:Int = Std.string( _currentDropTime ).indexOf('.');
+		_countDownText.text = Std.string( _currentDropTime ).substring(0, l_pointIndex+2);
+		_countDownText.setPosition( FlxG.mouse.x + 20, FlxG.mouse.y );
+		
+		_currentDropTime -= FlxG.elapsed * _dropTimeMultiplier;
 		
 		
 		//FlxNapeState.debug.drawCircle( Vec2.weak(FlxG.mouse.x, FlxG.mouse.y), 25, 0xffffffff ) ;

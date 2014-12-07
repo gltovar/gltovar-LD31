@@ -62,13 +62,22 @@ class BaseCharacter extends FlxBasic
 	
 	private var _outOfBoundsTime:Float;
 
-	public function new() 
+	public function new(p_colorAm:Int = -1, p_x:Float = -1, p_y:Float = -1 ) 
 	{
 		super();
 		
 		_exLikes = new Array<FlxNapeSprite>();
 		
-		colorAm = Reg.COLORS[FlxRandom.intRanged(0, Reg.COLORS.length - 1)];
+		if ( p_colorAm == -1)
+		{
+			colorAm = Reg.COLORS[FlxRandom.intRanged(0, Reg.COLORS.length - 1)];
+		}
+		else
+		{
+			colorAm = p_colorAm;
+		}
+		
+		
 		colorLike = Reg.COLORS[FlxRandom.intRanged(0, Reg.COLORS.length - 1)];
 		colorHate = Reg.COLORS[FlxRandom.intRanged(0, Reg.COLORS.length - 1)];
 		shy = (Math.round( Math.random()) == 1 ) ? true : false;
@@ -86,8 +95,27 @@ class BaseCharacter extends FlxBasic
 		viewBody.color = colorAm;
 		
 		viewMouth = new FlxSprite(0, 0);
-		viewMouth.loadGraphic( "assets/images/mouth_happy.png" );
-		viewMouth.offset.set( 18, 0 );
+		
+		switch( FlxRandom.intRanged(0, 4) )
+		{
+			case 0:
+				viewMouth.loadGraphic( "assets/images/mouth_happy.png" );
+				viewMouth.offset.set( 32, 32 );
+			case 1:
+				viewMouth.loadGraphic( "assets/images/mouth_smile.png" );
+				viewMouth.offset.set( 32, 32 );
+			case 2:
+				viewMouth.loadGraphic( "assets/images/mouth_meh.png" );
+				viewMouth.offset.set( 32, 32 );
+			case 3:
+				viewMouth.loadGraphic( "assets/images/mouth_sad_01.png" );
+				viewMouth.offset.set( 32, 32 );
+			case 4:
+				viewMouth.loadGraphic( "assets/images/mouth_estatic.png" );
+				viewMouth.offset.set( 32, 32 );
+		}
+		
+		
 		
 		viewEye = new FlxSprite(0, 0);
 		viewEye.loadGraphic( "assets/images/eye.png" );
@@ -110,12 +138,21 @@ class BaseCharacter extends FlxBasic
 		
 		view.createCircularBody( 32, BodyType.DYNAMIC );
 		view.setBodyMaterial(3, 0.2, 0, 1);
-		view.body.position.set( Vec2.weak( FlxRandom.intRanged(64, FlxG.width - 64), FlxRandom.intRanged(64, FlxG.height - 64) ) );
+		
+		if ( p_x == -1 )
+		{
+			view.body.position.set( Vec2.weak( FlxRandom.intRanged(64, FlxG.width - 64), FlxRandom.intRanged(64, FlxG.height - 64) ) );
+		}
+		else
+		{
+			view.body.position.set( Vec2.weak( p_x, p_y ) );
+		}
+		
 		view.body.userData.character = this;
 		view.body.rotation = FlxAngle.asRadians( FlxRandom.intRanged( 0, 360 ) );
 		
 		//view.body.applyAngularImpulse( FlxRandom.floatRanged( -1000, 1000) );
-		view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(500,1000) , view.body.rotation, true ) );
+		view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(100,300) , view.body.rotation, true ) );
 		view.body.cbTypes.add( characterInteraction );
 		
 		
