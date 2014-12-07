@@ -17,9 +17,11 @@ import flixel.util.FlxSpriteUtil;
 import nape.callbacks.CbType;
 import nape.geom.Vec2;
 import nape.phys.Body;
+import nape.phys.BodyList;
 import nape.phys.BodyType;
 import nape.shape.Polygon;
 import nape.shape.Shape;
+import nape.shape.ShapeList;
 import openfl.events.EventDispatcher;
 
 /**
@@ -82,6 +84,7 @@ class BaseCharacter extends FlxBasic
 		view.createCircularBody( 32, BodyType.DYNAMIC );
 		view.setBodyMaterial(.5, 0.2, 0, 1);
 		view.body.position.set( Vec2.weak( FlxRandom.intRanged(64, FlxG.width - 64), FlxRandom.intRanged(64, FlxG.height - 64) ) );
+		view.body.userData.character = this;
 		/*view.body.rotation = FlxAngle.asRadians( FlxRandom.intRanged( 0, 360 ) );
 		
 		view.body.applyAngularImpulse( FlxRandom.floatRanged( -1000, 1000) );
@@ -127,17 +130,28 @@ class BaseCharacter extends FlxBasic
 		
 		view.body.velocity.rotate( view.body.rotation - view.body.velocity.angle );
 		
-		vision.body.rotation = view.body.rotation;
-		var visionOffset:Vec2 = view.body.position.copy(true);
-		visionOffset = visionOffset.add( Vec2.fromPolar( 128, view.body.rotation,true ) );
-		vision.body.position.set( visionOffset );
-		FlxNapeState.debug.drawPolygon( vision.castPolygon.worldVerts, visionColor );
-		
-		/*movementController.update();
-		visionController.update();
-		
-		vision.setPosition( view.getMidpoint().x, view.getMidpoint().y );*/
-		
+		if ( currentLike == null )
+		{
+	
+			FlxNapeState.debug.drawCircle( view.body.position, 128, visionColor );
+			var l_bodyList:BodyList = FlxNapeState.space.bodiesInCircle( view.body.position, 128);
+			for ( body in l_bodyList )
+			{
+				if ( body == view.body )
+				{
+					continue;
+				}
+				var l_character:BaseCharacter = body.userData.character;
+				if ( l_character != null && l_character.colorAm == colorLike )
+				{
+					currentLike = l_character.view;
+				}
+			}
+		}
+		else
+		{
+			FlxNapeState.debug.drawLine( view.body.position, currentLike.body.position, visionColor );
+		}
 	}
 	
 	private function onFoundHate( e:VisionEvent ):Void
