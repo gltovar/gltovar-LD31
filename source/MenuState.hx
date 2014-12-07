@@ -154,6 +154,8 @@ class MenuState extends FlxNapeState
 		//p_collision.int2.castBody.rotation += 3.14;
 		//p_collision.int2.castBody.angularVel *= -1;
 		
+		p_collision.int1.castBody.userData.character.onBump( p_collision.int2.castBody.userData.character.view );
+		p_collision.int2.castBody.userData.character.onBump( p_collision.int1.castBody.userData.character.view );
 		
 	}
 	

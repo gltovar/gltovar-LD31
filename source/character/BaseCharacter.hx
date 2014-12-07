@@ -42,6 +42,10 @@ class BaseCharacter extends FlxBasic
 	public var colorHate:Int;
 	public var shy:Bool;
 	
+	public var viewBody:FlxSprite;
+	public var viewMouth:FlxSprite;
+	public var viewEye:FlxSprite;
+	
 	public var view:FlxNapeSprite;
 	public var vision:Shape;
 	public var visionColor:Int;
@@ -54,11 +58,15 @@ class BaseCharacter extends FlxBasic
 	public var currentLike:FlxNapeSprite;
 	public var currentHate:FlxNapeSprite;
 	
+	private var _exLikes:Array<FlxNapeSprite>;
+	
 	private var _outOfBoundsTime:Float;
 
 	public function new() 
 	{
 		super();
+		
+		_exLikes = new Array<FlxNapeSprite>();
 		
 		colorAm = Reg.COLORS[FlxRandom.intRanged(0, Reg.COLORS.length - 1)];
 		colorLike = Reg.COLORS[FlxRandom.intRanged(0, Reg.COLORS.length - 1)];
@@ -72,18 +80,33 @@ class BaseCharacter extends FlxBasic
 		dispatcher.addEventListener( VisionEvent.FOUND_HATE, onFoundHate, false, 0, true );
 		dispatcher.addEventListener( VisionEvent.FOUND_LIKE, onFoundLike, false, 0, true );
 		
-		view = new FlxNapeSprite( 0,0);
+		viewBody = new FlxSprite( 0, 0 );
+		viewBody.loadGraphic( "assets/images/character.png", false, 64, 64 );
+		viewBody.offset.set( 32, 32 );
+		viewBody.color = colorAm;
+		
+		viewMouth = new FlxSprite(0, 0);
+		viewMouth.loadGraphic( "assets/images/mouth_happy.png" );
+		viewMouth.offset.set( 18, 0 );
+		
+		viewEye = new FlxSprite(0, 0);
+		viewEye.loadGraphic( "assets/images/eye.png" );
+		viewEye.color = colorLike;
+		viewEye.offset.set( 10, 24 );
+		
+		
+		view = new FlxNapeSprite( 0, 0);
 		view.makeGraphic( 64, 64, FlxColor.TRANSPARENT, true );
 		
 		
-		var bodyLinestyle:LineStyle = { color: colorHate, thickness: 5 };
 		
-		var eyeLinestyle:LineStyle = { color: FlxColor.WHITE, thickness: 3 };
+		//var bodyLinestyle:LineStyle = { color: colorHate, thickness: 5 };
 		
-		FlxSpriteUtil.drawCircle( view, -1, -1, 30, colorAm, bodyLinestyle );
-		FlxSpriteUtil.drawCircle( view, 48, -1, 10, colorLike, eyeLinestyle );
+		//var eyeLinestyle:LineStyle = { color: FlxColor.WHITE, thickness: 3 };
+		//FlxSpriteUtil.drawCircle( view, -1, -1, 32, colorAm );
+		//FlxSpriteUtil.drawCircle( view, 48, -1, 10, colorLike, eyeLinestyle );
 		
-		view.antialiasing = true;
+		//view.antialiasing = true;
 		
 		view.createCircularBody( 32, BodyType.DYNAMIC );
 		view.setBodyMaterial(3, 0.2, 0, 1);
@@ -97,6 +120,14 @@ class BaseCharacter extends FlxBasic
 		
 		
 		Reg.VIEWS.add( view );
+		
+		Reg.VIEWS.add( viewEye );
+		
+		Reg.VIEWS.add( viewBody );
+		
+		Reg.VIEWS.add( viewMouth );
+		
+		
 		
 		
 		//vision = new FlxNapeSprite(0, 0);
@@ -133,11 +164,21 @@ class BaseCharacter extends FlxBasic
 		}
 		
 		view.body.velocity.rotate( view.body.rotation - view.body.velocity.angle );
-		if ( view.body.velocity.length < .3 ) 
+		if ( view.body.velocity.length < .5 ) 
 		{
-			view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(1000, 2000) , view.body.rotation, true ) );
+			view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(500, 1000) , view.body.rotation, true ) );
 		
 		}
+		
+		viewBody.setPosition( view.body.position.x, view.body.position.y );
+		
+		viewMouth.setPosition( view.body.position.x, view.body.position.y );
+		
+		var l_eyeVec:Vec2 = view.body.position.copy(true);
+		l_eyeVec = l_eyeVec.add( Vec2.fromPolar( 5, view.body.rotation, true ) );
+		
+		viewEye.setPosition( l_eyeVec.x, l_eyeVec.y );
+		
 		
 		if ( _outOfBoundsTime > 0 )
 		{
@@ -163,7 +204,7 @@ class BaseCharacter extends FlxBasic
 			if ( currentLike == null )
 			{
 		
-				///FlxNapeState.debug.drawCircle( view.body.position, 128, visionColor );
+				//FlxNapeState.debug.drawCircle( view.body.position, 128, visionColor );
 				var l_bodyList:BodyList = FlxNapeState.space.bodiesInCircle( view.body.position, 128);
 				for ( body in l_bodyList )
 				{
@@ -172,14 +213,45 @@ class BaseCharacter extends FlxBasic
 						continue;
 					}
 					var l_character:BaseCharacter = body.userData.character;
-					if ( l_character != null && l_character.colorAm == colorLike )
+					if ( l_character != null && l_character.colorAm == colorLike && _exLikes.indexOf( l_character.view ) == -1 )
 					{
 						currentLike = l_character.view;
+						//view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(500,1000) , view.body.rotation, true ) );
 					}
 				}
 			}
 			else
 			{
+				var l_angleToLike:Float = (FlxAngle.getAngle( FlxPoint.weak( view.body.position.x, view.body.position.y), FlxPoint.weak(currentLike.body.position.x, currentLike.body.position.y) ) - 90 ) * FlxAngle.TO_RAD;
+				
+				
+				var l_vectorToLike:Vec2 = Vec2.fromPolar( 1, l_angleToLike, true );
+				var l_curVector:Vec2 = Vec2.fromPolar( 1, view.body.rotation, true );
+				
+				var l_angleDistanceToLike:Float =  Math.abs( Math.acos( FlxMath.dotProduct(  l_curVector.x, l_curVector.y, l_vectorToLike.x, l_vectorToLike.y ) ) );
+				
+				if ( l_angleDistanceToLike > .05 )
+				{
+					
+					var pos_source:Vec2 = view.body.position.copy(true);
+					var dir_source:Vec2 = Vec2.fromPolar(1, view.body.rotation, true);
+					var pos_target:Vec2 = Vec2.weak( currentLike.body.position.x, currentLike.body.position.y );
+				
+					if ( (pos_source.x - pos_target.x) * dir_source.y > (pos_source.y - pos_target.y) * dir_source.x )
+					{
+						// clockwise
+						l_angleDistanceToLike *= .1;
+					}
+					else
+					{
+						// counterclockwise
+						l_angleDistanceToLike *= -.1;
+					}
+				
+					
+					view.body.rotation += l_angleDistanceToLike;
+				}
+				
 				//FlxNapeState.debug.drawLine( view.body.position, currentLike.body.position, visionColor );
 			}
 		}
@@ -213,6 +285,15 @@ class BaseCharacter extends FlxBasic
 		//view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(250,500) , view.body.rotation, true ) );
 		
 		currentLike = null;
+	}
+	
+	private function onBump( p_collider:FlxNapeSprite ):Void
+	{
+		if ( p_collider != null && p_collider == currentLike )
+		{
+			_exLikes.push( p_collider );
+			currentLike = null;
+		}
 	}
 	
 	private function onFoundHate( e:VisionEvent ):Void
