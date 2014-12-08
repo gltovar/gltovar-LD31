@@ -132,12 +132,12 @@ class MenuState extends FlxNapeState
 	
 		
 		var testingCharacters:Int = 0;
-		while ( testingCharacters < 8 )
+		/*while ( testingCharacters < 8 )
 		{
 			Reg.CHARACTERS.add( new BaseCharacter( ) );
 			
 			++testingCharacters;
-		}
+		}*/
 		
 		var interactionListener:InteractionListener = new InteractionListener( CbEvent.BEGIN, InteractionType.COLLISION, BaseCharacter.characterInteraction, BaseCharacter.characterInteraction, onCharacterCollide);
 		

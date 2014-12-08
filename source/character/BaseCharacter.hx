@@ -260,7 +260,7 @@ class BaseCharacter extends FlxBasic
 		
 		
 		view.body.velocity.rotate( view.body.rotation - view.body.velocity.angle );
-		if ( view.body.velocity.length < .5 ) 
+		if ( view.body.velocity.length < .75 ) 
 		{
 			view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(500, 1000) , view.body.rotation, true ) );
 		
