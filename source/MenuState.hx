@@ -2,6 +2,8 @@ package;
 
 import character.BaseCharacter;
 import flixel.addons.nape.FlxNapeSprite;
+import flixel.effects.particles.FlxEmitter;
+import flixel.effects.particles.FlxParticle;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
@@ -14,6 +16,7 @@ import flixel.util.FlxMath;
 import flixel.addons.nape.FlxNapeState;
 import flixel.util.FlxRandom;
 import flixel.util.FlxRect;
+import flixel.util.FlxSpriteUtil;
 import nape.callbacks.CbEvent;
 import nape.callbacks.InteractionCallback;
 import nape.callbacks.InteractionListener;
@@ -22,6 +25,7 @@ import nape.geom.AABB;
 import nape.geom.Vec2;
 import nape.phys.BodyList;
 import nape.phys.BodyType;
+import openfl._v2.text.TextField;
 import openfl.geom.Rectangle;
 
 /**
@@ -45,6 +49,8 @@ class MenuState extends FlxNapeState
 	
 	private var state:GameState;
 	
+	private var rules:FlxSprite;
+	
 	/**
 	 * Function that is called up when to state is created to set it up. 
 	 */
@@ -53,6 +59,47 @@ class MenuState extends FlxNapeState
 		super.create();
 		
 		napeDebugEnabled = true;
+		
+		Reg.BUMP_EMITTER = new FlxEmitter( 0, 0, 200 );
+		
+		Reg.BUMP_EMITTER.setXSpeed( -100, 100);
+		Reg.BUMP_EMITTER.setYSpeed( -100, 100);
+		
+		
+		var l_whitePixel:FlxParticle;
+		for ( i in 0...(Std.int(Reg.BUMP_EMITTER.maxSize * .5) ) )
+		{
+			l_whitePixel = new FlxParticle();
+			l_whitePixel.makeGraphic( 4, 4, FlxColor.WHITE );
+			l_whitePixel.visible = false;
+			Reg.BUMP_EMITTER.add( l_whitePixel );
+			l_whitePixel = new FlxParticle();
+			l_whitePixel.makeGraphic( 2, 2, FlxColor.WHITE );
+			l_whitePixel.visible = false;
+			Reg.BUMP_EMITTER.add( l_whitePixel );
+		}
+		
+		
+		
+		Reg.NIRVANA_EMITTER = new FlxEmitter( 0, 0, 300 );
+		
+		Reg.NIRVANA_EMITTER.setXSpeed( -200, 200);
+		Reg.NIRVANA_EMITTER.setYSpeed( -200, 200);
+		
+		
+		var l_whitePixel:FlxParticle;
+		for ( i in 0...(Std.int(Reg.NIRVANA_EMITTER.maxSize * .5) ) )
+		{
+			l_whitePixel = new FlxParticle();
+			l_whitePixel.makeGraphic( 5, 5, FlxRandom.color(100, 200) );
+			l_whitePixel.visible = false;
+			Reg.NIRVANA_EMITTER.add( l_whitePixel );
+			l_whitePixel = new FlxParticle();
+			l_whitePixel.makeGraphic( 3, 3, FlxRandom.color(100, 200) );
+			l_whitePixel.visible = false;
+			Reg.NIRVANA_EMITTER.add( l_whitePixel );
+		}
+		
 		
 		Reg.score = 0;
 		Reg.strikes = 0;
@@ -85,12 +132,12 @@ class MenuState extends FlxNapeState
 	
 		
 		var testingCharacters:Int = 0;
-		/*while ( testingCharacters < 8 )
+		while ( testingCharacters < 8 )
 		{
 			Reg.CHARACTERS.add( new BaseCharacter( ) );
 			
 			++testingCharacters;
-		}*/
+		}
 		
 		var interactionListener:InteractionListener = new InteractionListener( CbEvent.BEGIN, InteractionType.COLLISION, BaseCharacter.characterInteraction, BaseCharacter.characterInteraction, onCharacterCollide);
 		
@@ -98,6 +145,9 @@ class MenuState extends FlxNapeState
 		
 		_currentDropTime = TIME_DELAY_PLACEMENT - FlxG.elapsed;
 		_dropTimeMultiplier = 1;
+		
+		add( Reg.BUMP_EMITTER );
+		add( Reg.NIRVANA_EMITTER );
 		
 		
 		_nextDropColor = Reg.COLORS[ FlxRandom.intRanged(0, Reg.COLORS.length -1) ];
@@ -127,19 +177,28 @@ class MenuState extends FlxNapeState
 		
 		add(_strikeText );
 		
+		
 		state = GameState.INTRO;
+		
+		rules = new FlxSprite();
+		rules.loadGraphic( "assets/images/rules.png" );
+		add( rules );
+				
+		
+		FlxSpriteUtil.screenCenter( rules );
 		
 	}
 	
 	override public function update():Void 
 	{
-		super.update();
+		
 		
 		switch( state )
 		{
 			case GameState.INTRO:
 				intro();
 			case GameState.PLAYING:
+				super.update();
 				playing();
 			case GameState.GAME_OVER:
 				gameOver();
@@ -152,6 +211,8 @@ class MenuState extends FlxNapeState
 		if ( FlxG.mouse.justReleased )
 		{
 			state = GameState.PLAYING;
+			rules.kill();
+			rules.destroy();
 		}
 	}
 	
@@ -225,7 +286,7 @@ class MenuState extends FlxNapeState
 		if ( _currentDropTime <= 0 )
 		{
 			Reg.CHARACTERS.add( new BaseCharacter( _nextDropColor, FlxG.mouse.x, FlxG.mouse.y) );
-			FlxG.sound.play( "assets/sounds/Blip_Place.wav", .1 );
+			FlxG.sound.play( "assets/sounds/Blip_Place.wav", .05 );
 			_currentDropTime = TIME_DELAY_PLACEMENT;
 			_dropTimeMultiplier += .01;
 			_nextDropColor = Reg.COLORS[ FlxRandom.intRanged(0, Reg.COLORS.length -1) ];
@@ -234,7 +295,7 @@ class MenuState extends FlxNapeState
 		}
 		else if ( Math.floor( _currentDropTime ) != Math.floor( _currentDropTime - (FlxG.elapsed * _dropTimeMultiplier) ) && _currentDropTime - (FlxG.elapsed * _dropTimeMultiplier) > 0 )
 		{
-			FlxG.sound.play("assets/sounds/Blip_Countdown.wav", .1 );
+			FlxG.sound.play("assets/sounds/Blip_Countdown.wav", .05 );
 		}
 		
 		var l_pointIndex:Int = Std.string( _currentDropTime ).indexOf('.');
@@ -254,6 +315,15 @@ class MenuState extends FlxNapeState
 				_strikeText.text = "X X";
 			case 3:
 				_strikeText.text = "X X X";
+				
+				var l_gameOverText:FlxText = new FlxText(0, 0, 900, "Game Over\n\nFinal Score: "+Reg.score+"\n\n click anywhere to play again", 48 );
+				l_gameOverText.alignment = "center";
+				l_gameOverText.color = FlxColor.WHITE;
+				l_gameOverText.borderStyle = FlxText.BORDER_SHADOW;
+				l_gameOverText.borderColor = 0;
+				add( l_gameOverText );
+				FlxSpriteUtil.screenCenter( l_gameOverText );
+				
 				state = GameState.GAME_OVER;
 				// GAMEOVER!!!!!
 		}

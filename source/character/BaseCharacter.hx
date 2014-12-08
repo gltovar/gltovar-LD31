@@ -32,6 +32,7 @@ import openfl.events.EventDispatcher;
  */
 class BaseCharacter extends FlxBasic
 {
+	public static inline var MAX_TIME_SPEND_ON_LIKE:Float = 4;
 	public static inline var LONELY_LOSE_KARMA_TIME:Float = 10;
 	public static inline var TOTAL_NIRVANA_POINTS:Int = 12;
 	public static inline var STARTING_KARMA:Int = 5;
@@ -70,6 +71,8 @@ class BaseCharacter extends FlxBasic
 	public var karma:Int;
 	
 	private var _lonelyTimer:Float;
+	
+	private var _giveUpOnLikeTimer:Float;
 
 	public function new(p_colorAm:Int = -1, p_x:Float = -1, p_y:Float = -1 ) 
 	{
@@ -194,6 +197,7 @@ class BaseCharacter extends FlxBasic
 		
 		//FlxG.watch.addQuick( "lonely timer", _lonelyTimer);
 		_lonelyTimer = 0;
+		_giveUpOnLikeTimer = 0;
 	}
 	
 	private function updateMouth():Void
@@ -231,6 +235,12 @@ class BaseCharacter extends FlxBasic
 		{
 			updateKarma();
 			_lonelyTimer = 0;
+		}
+		
+		if ( _giveUpOnLikeTimer > MAX_TIME_SPEND_ON_LIKE )
+		{
+			currentLike = null;
+			_giveUpOnLikeTimer = 0;
 		}
 		
 		
@@ -312,6 +322,8 @@ class BaseCharacter extends FlxBasic
 			}
 			else 
 			{
+				_giveUpOnLikeTimer += FlxG.elapsed;
+				
 				var l_angleToLike:Float = (FlxAngle.getAngle( FlxPoint.weak( view.body.position.x, view.body.position.y), FlxPoint.weak(currentLike.body.position.x, currentLike.body.position.y) ) - 90 ) * FlxAngle.TO_RAD;
 				
 				
@@ -400,6 +412,8 @@ class BaseCharacter extends FlxBasic
 	{
 		if ( p_collider != null && p_collider == currentLike )
 		{
+			FlxG.sound.play("assets/sounds/Bump_" + FlxRandom.intRanged(1, 3) + ".wav", .1);
+			
 			_exLikes.push( p_collider );
 			currentLike = null;
 			updateKarma(1);
@@ -423,10 +437,16 @@ class BaseCharacter extends FlxBasic
 		
 		if ( karma >= TOTAL_NIRVANA_POINTS )
 		{
+			Reg.NIRVANA_EMITTER.setPosition( view.body.position.x, view.body.position.y );
+			Reg.NIRVANA_EMITTER.start( true, .5, 0.1, 75, .75 );
+			
 			Reg.score += 10;
-			if (p_fromChain == false &&  Reg.strikes > 0 ) // lighten the chaining a bit
+			if (p_fromChain == false ) // lighten the chaining a bit
 			{
-				--Reg.strikes;
+				if ( Reg.strikes > 0 )
+				{
+					--Reg.strikes;
+				}
 				var l_bodyList:BodyList = FlxNapeState.space.bodiesInCircle( view.body.position, 150);
 				for ( body in l_bodyList )
 				{
@@ -444,6 +464,11 @@ class BaseCharacter extends FlxBasic
 			
 			FlxG.sound.play("assets/sounds/Reach_Nirvana.wav", .33 );
 			destroy();
+		}
+		else if ( p_amount > 0 )
+		{
+			Reg.BUMP_EMITTER.setPosition( view.body.position.x, view.body.position.y );
+			Reg.BUMP_EMITTER.start( true, .25, 0.1, 20, .5 );
 		}
 	}
 	

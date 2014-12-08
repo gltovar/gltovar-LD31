@@ -1,5 +1,6 @@
 package;
 
+import flixel.effects.particles.FlxEmitter;
 import flixel.FlxSprite;
 import flixel.group.FlxGroup;
 import flixel.group.FlxTypedGroup;
@@ -45,6 +46,9 @@ class Reg
 	 * Especially useful for setting up multiple save slots.
 	 */
 	public static var saves:Array<FlxSave> = [];
+	
+	public static var BUMP_EMITTER:FlxEmitter;
+	public static var NIRVANA_EMITTER:FlxEmitter;
 	
 	public static var COLORS:Array<Int> = [ FlxColor.CRIMSON, FlxColor.AZURE, FlxColor.GOLDEN, FlxColor.LAVENDER ];
 	
