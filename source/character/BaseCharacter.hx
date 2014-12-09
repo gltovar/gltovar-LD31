@@ -481,7 +481,7 @@ class BaseCharacter extends FlxBasic
 						continue;
 					}
 					var l_character:BaseCharacter = body.userData.character;
-					if ( l_character != null && l_character.karma <= TOTAL_NIRVANA_POINTS )
+					if ( l_character != null && l_character.karma/TOTAL_NIRVANA_POINTS < .4 )
 					{
 						l_character.updateKarma(1,true);
 					}
