@@ -198,6 +198,30 @@ class BaseCharacter extends FlxBasic
 		//FlxG.watch.addQuick( "lonely timer", _lonelyTimer);
 		_lonelyTimer = 0;
 		_giveUpOnLikeTimer = 0;
+		
+		var l_bodyList:BodyList = FlxNapeState.space.bodiesInCircle( view.body.position, 150);
+		for ( body in l_bodyList )
+		{
+			if ( body == view.body )
+			{
+				continue;
+			}
+			var l_character:BaseCharacter = body.userData.character;
+			if ( l_character != null )
+			{
+				l_character.updateLike( this );
+			}
+		}
+	}
+	
+	public function updateLike( p_newLike:BaseCharacter ):Void
+	{
+		if ( p_newLike.colorAm == colorLike )
+		{
+			currentLike = p_newLike.view;
+			_giveUpOnLikeTimer = 0;
+			view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(10,35) , view.body.rotation, true ) );
+		}
 	}
 	
 	private function updateMouth():Void
@@ -312,7 +336,6 @@ class BaseCharacter extends FlxBasic
 					if ( l_character != null && l_character.colorAm == colorLike && _exLikes.indexOf( l_character.view ) == -1 )
 					{
 						currentLike = l_character.view;
-						//view.body.applyImpulse( Vec2.fromPolar( FlxRandom.floatRanged(500,1000) , view.body.rotation, true ) );
 					}
 				}
 			}
@@ -426,14 +449,17 @@ class BaseCharacter extends FlxBasic
 		{
 			return;
 		}
+		
+		
+		karma += p_amount;
 		if ( karma <= 0 )
 		{
 			karma = 0;
-			return;
 		}
 		
-		karma += p_amount;
 		updateMouth();
+		
+		
 		
 		if ( karma >= TOTAL_NIRVANA_POINTS )
 		{
